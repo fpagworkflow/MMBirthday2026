@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Madeleine & Mikayla's Birthday Party!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
@@ -49,8 +49,13 @@
     .sub .one { color: #c77dff; font-weight: 800; }
     .sub .five { color: #FF6B9D; font-weight: 800; }
 
-    #maze-wrap { display: flex; justify-content: center; margin-bottom: 0.4rem; }
+    #maze-wrap { display: flex; justify-content: center; margin-bottom: 0.4rem; position: relative; }
     #maze-canvas { border-radius: 14px; border: 3px solid #FF9EC4; display: block; max-width: 100%; }
+    /* DOM emoji overlay for collectables — reliable on all mobile browsers */
+    #collectable-layer { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); pointer-events: none; }
+    .co-emoji { position: absolute; font-size: 18px; line-height: 1; text-align: center; transform: translate(-50%, -50%); transition: opacity 0.2s; animation: co-pulse 1.8s ease-in-out infinite; }
+    .co-emoji.hidden { opacity: 0; pointer-events: none; }
+    @keyframes co-pulse { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.18); } }
 
     #collect-bar { display: flex; justify-content: center; gap: 5px; margin: 0.3rem auto; flex-wrap: wrap; min-height: 22px; }
     .citem { font-size: 0.95rem; opacity: 0.22; transition: opacity 0.3s, transform 0.35s; }
@@ -198,7 +203,7 @@
   <div id="game">
     <h1 class="title">Find the Party! 🎉</h1>
     <p class="sub">Mikayla's <span class="one">ONE</span>-derful &amp; Madeleine's <span class="five">FIVE</span>-tastic birthday!<br>Collect all the treasures and reach the cake!</p>
-    <div id="maze-wrap"><canvas id="maze-canvas"></canvas></div>
+    <div id="maze-wrap"><canvas id="maze-canvas"></canvas><div id="collectable-layer"></div></div>
     <div id="collect-bar"></div>
     <div id="controls">
       <button class="ctrl-btn" id="btn-up" onclick="move('up')">
@@ -289,6 +294,33 @@ function buildCollectBar(){
 }
 function updateCollectBar(){COLLECTABLES.forEach(c=>{const el=document.getElementById('ci-'+c.key);if(el)el.classList.toggle('got',collected.has(c.key));});}
 
+function buildCollectableLayer(){
+  const layer=document.getElementById('collectable-layer');
+  layer.innerHTML='';
+  // Scale factor: canvas may be displayed smaller than its internal resolution
+  const displayW=mc.offsetWidth||W;
+  const scale=displayW/W;
+  layer.style.width=displayW+'px';
+  layer.style.height=(H*scale)+'px';
+  COLLECTABLES.forEach(co=>{
+    const el=document.createElement('span');
+    el.className='co-emoji';
+    el.id='co-'+co.key;
+    el.textContent=co.icon;
+    el.style.left=((co.c*CELL+CELL/2)*scale)+'px';
+    el.style.top=((co.r*CELL+CELL/2)*scale)+'px';
+    el.style.fontSize=Math.round(CELL*scale*0.72)+'px';
+    el.style.animationDelay=((co.r+co.c)*0.15)+'s';
+    layer.appendChild(el);
+  });
+}
+function updateCollectableLayer(){
+  COLLECTABLES.forEach(co=>{
+    const el=document.getElementById('co-'+co.key);
+    if(el)el.classList.toggle('hidden',collected.has(co.key));
+  });
+}
+
 function rr(x,y,w,h,r){
   ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
   ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
@@ -311,18 +343,14 @@ function drawMaze(){
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
     if(GRID[r][c]===0){ctx.fillStyle='rgba(255,180,210,0.1)';ctx.beginPath();ctx.arc(c*CELL+CELL/2,r*CELL+CELL/2,1.4,0,Math.PI*2);ctx.fill();}
   }
+  // Draw glow halos on canvas only (no emoji — handled by DOM layer)
   COLLECTABLES.forEach(co=>{
     if(collected.has(co.key))return;
-    const pulse=0.9+Math.sin(bounceT*1.4+co.r+co.c)*0.1;
     const cx=co.c*CELL+CELL/2,cy=co.r*CELL+CELL/2;
-    ctx.save();
-    const glowCol=co.icon==='⭐'?'rgba(255,210,0,0.4)':co.icon==='🎀'?'rgba(255,100,180,0.4)':'rgba(80,210,80,0.4)';
-    const grd=ctx.createRadialGradient(cx,cy,0,cx,cy,CELL*0.58);
+    const glowCol=co.icon==='⭐'?'rgba(255,210,0,0.45)':co.icon==='🎀'?'rgba(255,100,180,0.45)':'rgba(80,210,80,0.45)';
+    const grd=ctx.createRadialGradient(cx,cy,0,cx,cy,CELL*0.62);
     grd.addColorStop(0,glowCol);grd.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(cx,cy,CELL*0.58,0,Math.PI*2);ctx.fill();
-    ctx.translate(cx,cy);ctx.scale(pulse,pulse);
-    ctx.font=`${CELL*0.72}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(co.icon,0,0);ctx.restore();
+    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(cx,cy,CELL*0.62,0,Math.PI*2);ctx.fill();
   });
   drawChocCake(GOAL.c*CELL,GOAL.r*CELL);
   drawGirl(player.c*CELL+CELL/2,player.r*CELL+CELL/2+Math.sin(bounceT)*1.6);
@@ -416,7 +444,7 @@ function move(dir){
   player={r,c};
   const co=COLLECTABLES.find(co=>co.r===r&&co.c===c);
   if(co&&!collected.has(co.key)){
-    collected.add(co.key);updateCollectBar();
+    collected.add(co.key);updateCollectBar();updateCollectableLayer();
     const rem=COLLECTABLES.length-collected.size;
     document.getElementById('status').textContent=rem>0?`${co.icon} Collected! ${collected.size}/${COLLECTABLES.length} treasures!`:'All treasures! Reach the cake! 🎂';
   } else if(!(r===GOAL.r&&c===GOAL.c)){
@@ -430,6 +458,8 @@ document.addEventListener('keydown',e=>{
   const m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
   if(m[e.key]){e.preventDefault();move(m[e.key]);}
 });
+
+window.addEventListener('resize',()=>{initBg();buildCollectableLayer();});
 
 // Touch swipe support for mobile
 let touchStartX=0,touchStartY=0;
@@ -477,7 +507,7 @@ function launchConfetti(){
 
 function resetGame(){
   player={...START};won=false;collected=new Set();bounceT=0;
-  updateCollectBar();
+  updateCollectBar();updateCollectableLayer();
   document.getElementById('reveal').classList.remove('show');
   document.getElementById('game').style.display='block';
   document.getElementById('status').textContent='';
@@ -485,7 +515,7 @@ function resetGame(){
 }
 
 function loop(){if(won)return;drawMaze();animFrame=requestAnimationFrame(loop);}
-initBg();bgLoop();buildCollectBar();loop();
+initBg();bgLoop();buildCollectBar();buildCollectableLayer();loop();
 </script>
 </body>
 </html>
