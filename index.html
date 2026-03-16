@@ -4,12 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script>
-    var lastTap=0;
-    document.addEventListener('touchstart',function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});
-    document.addEventListener('touchend',function(e){var now=Date.now();if(now-lastTap<320)e.preventDefault();lastTap=now;},{passive:false});
+    // Block pinch and gesture zoom only — never delay single taps
     document.addEventListener('gesturestart',function(e){e.preventDefault();},{passive:false});
     document.addEventListener('gesturechange',function(e){e.preventDefault();},{passive:false});
     document.addEventListener('gestureend',function(e){e.preventDefault();},{passive:false});
+    document.addEventListener('touchstart',function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});
   </script>
   <title>Madeleine & Mikayla's Birthday Party!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -216,16 +215,16 @@
     <div id="maze-wrap"><canvas id="maze-canvas"></canvas><div id="collectable-layer"></div></div>
     <div id="collect-bar"></div>
     <div id="controls">
-      <button class="ctrl-btn" id="btn-up" onclick="move('up')">
+      <button class="ctrl-btn" id="btn-up" ontouchstart="e=arguments[0];e.preventDefault();move('up');" onclick="move('up')">
         <svg class="arrow-icon" viewBox="0 0 20 20"><polyline points="4,14 10,6 16,14"/></svg>
       </button>
-      <button class="ctrl-btn" id="btn-left" onclick="move('left')">
+      <button class="ctrl-btn" id="btn-left" ontouchstart="e=arguments[0];e.preventDefault();move('left');" onclick="move('left')">
         <svg class="arrow-icon" viewBox="0 0 20 20"><polyline points="14,4 6,10 14,16"/></svg>
       </button>
-      <button class="ctrl-btn" id="btn-down" onclick="move('down')">
+      <button class="ctrl-btn" id="btn-down" ontouchstart="e=arguments[0];e.preventDefault();move('down');" onclick="move('down')">
         <svg class="arrow-icon" viewBox="0 0 20 20"><polyline points="4,6 10,14 16,6"/></svg>
       </button>
-      <button class="ctrl-btn" id="btn-right" onclick="move('right')">
+      <button class="ctrl-btn" id="btn-right" ontouchstart="e=arguments[0];e.preventDefault();move('right');" onclick="move('right')">
         <svg class="arrow-icon" viewBox="0 0 20 20"><polyline points="6,4 14,10 6,16"/></svg>
       </button>
     </div>
