@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script>
-    // Block pinch and gesture zoom only — never delay single taps
+    // Prevent pinch zoom only — does not affect tap speed at all
     document.addEventListener('gesturestart',function(e){e.preventDefault();},{passive:false});
     document.addEventListener('gesturechange',function(e){e.preventDefault();},{passive:false});
     document.addEventListener('gestureend',function(e){e.preventDefault();},{passive:false});
@@ -71,30 +71,30 @@
     .citem.got { opacity: 1; transform: scale(1.3); }
 
     /* Rainbow arrow buttons */
-    #controls { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(2, 50px); gap: 5px; justify-content: center; margin: 0.4rem auto; }
+    #controls { display: grid; grid-template-columns: repeat(3, 64px); grid-template-rows: repeat(2, 64px); gap: 8px; justify-content: center; margin: 0.5rem auto; }
     #btn-up    { grid-column: 2; grid-row: 1; }
     #btn-left  { grid-column: 1; grid-row: 2; }
     #btn-down  { grid-column: 2; grid-row: 2; }
     #btn-right { grid-column: 3; grid-row: 2; }
     .ctrl-btn {
-      width: 50px; height: 50px; border-radius: 14px; border: none;
+      width: 64px; height: 64px; border-radius: 18px; border: none;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: transform 0.1s, box-shadow 0.1s;
       user-select: none; -webkit-tap-highlight-color: transparent;
       position: relative; overflow: hidden;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      box-shadow: 0 5px 16px rgba(0,0,0,0.22);
+      /* No transition — instant visual feedback */
     }
     #btn-up    { background: linear-gradient(160deg, #FF6B6B, #FF9F1C, #FFD700); }
     #btn-left  { background: linear-gradient(160deg, #FFD700, #4ADE80, #22D3EE); }
     #btn-down  { background: linear-gradient(160deg, #22D3EE, #818CF8, #c77dff); }
     #btn-right { background: linear-gradient(160deg, #c77dff, #FF6B9D, #FF6B6B); }
-    .ctrl-btn::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.18); border-radius: 14px; }
-    .ctrl-btn:active { transform: scale(0.87); box-shadow: 0 2px 6px rgba(0,0,0,0.14); }
+    .ctrl-btn::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.15); border-radius: 18px; }
+    .ctrl-btn:active { opacity: 0.75; }
     .arrow-icon {
-      width: 20px; height: 20px; display: block;
-      fill: none; stroke: white; stroke-width: 3;
+      width: 28px; height: 28px; display: block;
+      fill: none; stroke: white; stroke-width: 3.2;
       stroke-linecap: round; stroke-linejoin: round;
-      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.35));
       position: relative; z-index: 1;
     }
 
@@ -215,16 +215,16 @@
     <div id="maze-wrap"><canvas id="maze-canvas"></canvas><div id="collectable-layer"></div></div>
     <div id="collect-bar"></div>
     <div id="controls">
-      <button class="ctrl-btn" id="btn-up" ontouchstart="e=arguments[0];e.preventDefault();move('up');" onclick="move('up')">
+      <button class="ctrl-btn" id="btn-up">
         <svg class="arrow-icon" viewBox="0 0 20 20"><polyline points="4,14 10,6 16,14"/></svg>
       </button>
-      <button class="ctrl-btn" id="btn-left" ontouchstart="e=arguments[0];e.preventDefault();move('left');" onclick="move('left')">
+      <button class="ctrl-btn" id="btn-left">
         <svg class="arrow-icon" viewBox="0 0 20 20"><polyline points="14,4 6,10 14,16"/></svg>
       </button>
-      <button class="ctrl-btn" id="btn-down" ontouchstart="e=arguments[0];e.preventDefault();move('down');" onclick="move('down')">
+      <button class="ctrl-btn" id="btn-down">
         <svg class="arrow-icon" viewBox="0 0 20 20"><polyline points="4,6 10,14 16,6"/></svg>
       </button>
-      <button class="ctrl-btn" id="btn-right" ontouchstart="e=arguments[0];e.preventDefault();move('right');" onclick="move('right')">
+      <button class="ctrl-btn" id="btn-right">
         <svg class="arrow-icon" viewBox="0 0 20 20"><polyline points="6,4 14,10 6,16"/></svg>
       </button>
     </div>
@@ -462,6 +462,18 @@ function move(dir){
   }
   if(r===GOAL.r&&c===GOAL.c){won=true;cancelAnimationFrame(animFrame);drawMaze();setTimeout(showReveal,700);}
 }
+
+// Per-button touch listeners — touchstart fires instantly, preventDefault stops zoom on these elements only
+[['btn-up','up'],['btn-left','left'],['btn-down','down'],['btn-right','right']].forEach(([id,dir])=>{
+  const btn=document.getElementById(id);
+  btn.addEventListener('touchstart',function(e){
+    e.preventDefault(); // stop zoom & ghost click on this button only
+    move(dir);
+  },{passive:false});
+  btn.addEventListener('click',function(){
+    move(dir); // desktop fallback
+  });
+});
 
 document.addEventListener('keydown',e=>{
   const m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
